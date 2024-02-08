@@ -117,9 +117,9 @@ elif [[ $1 == "generate-keys" ]]; then
 # client-add
 #
 elif [[ $1 == "client-add" ]]; then
-    local client_name="client"
-    local public_key="empty"
-    local allowed_ips="10.10.10.0/24"
+    client_name="client"
+    public_key="empty"
+    allowed_ips="10.10.10.0/24"
 
     # input: client_name
     echo "Enter name for new client. Make sure it is unique. [def: $client_name]"
@@ -174,7 +174,7 @@ elif [[ $1 == "client-add" ]]; then
 # client-remove
 #
 elif [[ $1 == "client-remove" ]]; then
-    local client_name="client"
+    client_name="client"
 
     # input: client_name
     echo "Enter name of client that should be removed. [def: $client_name]"
