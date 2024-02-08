@@ -174,7 +174,16 @@ elif [[ $1 == "client-add" ]]; then
 # client-remove
 #
 elif [[ $1 == "client-remove" ]]; then
-    remove_client $2
+    local client_name="client"
+
+    # input: client_name
+    echo "Enter name of client that should be removed. [def: $client_name]"
+    read -p ">>> "
+    if [[ $REPLY != "" ]]; then
+        client_name=$REPLY
+    fi
+    clear
+    remove_client client_name
 
     # restart service
     sudo systemctl restart wg-quick@wg0.service
