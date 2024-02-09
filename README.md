@@ -1,20 +1,37 @@
 # wg-server
 
-This tool automates basic configuration of a wireguard server on Debian.
-Setting up a nftables firewall with [debian_server_setup](https://github.com/leonb033/debian_server_setup) is required.
+This interactive tool automates configuration of wireguard interfaces on Debian.
+
+## Requirements
+- Debian 12
+- wireguard
+- wireguard-tools
 
 ## Installation
 `wget -O setup.sh https://raw.githubusercontent.com/leonb033/wg-server/main/setup.sh && bash setup.sh`
 
 ## Commands
-### wg-server setup
-Creates a wg0 interface.
+### wg-server create <INTERFACE>
+Sets up a new wireguard interface.
 
-### wg-server generate-keys
-Generates new keys. All clients will be removed.
+### wg-server delete <INTERFACE>
+Deletes this wireguard interface.
 
-### wg-server client-add
-Adds a new client.
+### wg-server generate-keys <INTERFACE>
+Generates new public and private key for this interface.
 
-### wg-server client-remove
-Removes a client.
+### wg-server add-client <INTERFACE>
+Adds a new client to this interface.
+
+### wg-server remove-client <INTERFACE>
+Removes a client from this interface.
+
+## Useful wireguard commands:
+### systemctl --type=service | grep wg-quick
+Lists all interface services.
+
+### sudo systemctl [start/stop] wg-quick@<INTERFACE>.service
+Start / stop this interface service.
+
+### sudo systemctl [enable/disable] wg-quick@<INTERFACE>.service
+Enable / disable autostart for this interface service.
