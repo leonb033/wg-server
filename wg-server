@@ -2,9 +2,12 @@
 
 clear
 
-wg_client_net="10.11.12.0/24"
-wg_port="51820"
 wg_interface=$2
+wg_client_net="10.0.0.0/24"
+wg_port="51820"
+client_name="client"
+public_key="empty"
+allowed_ips="0.0.0.0/0"
 
 prompt_continue() {
     echo
@@ -22,8 +25,7 @@ prompt_continue_or_exit() {
 }
 
 generate_interface_config() {
-    echo "### DO NOT MODIFY THIS FILE MANUALLY. USE WG-SERVER COMMANDS."             | sudo tee /etc/wireguard/$wg_interface.conf > /dev/null
-    echo "[Interface]"                                                               | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "[Interface]"                                                               | sudo tee /etc/wireguard/$wg_interface.conf > /dev/null
     echo "PrivateKey = $(sudo cat /etc/wireguard/keys/$wg_interface/private.key)"    | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo "Address = $wg_client_net"                                                  | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo "ListenPort = $wg_port"                                                     | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
@@ -45,7 +47,7 @@ generate_keys() {
     sudo cat /etc/wireguard/keys/$wg_interface/private.key | wg pubkey | sudo tee /etc/wireguard/keys/$wg_interface/public.key > /dev/null
 }
 
-# remove client from server config
+# remove client from interface config
 remove_client() {
     sudo sed -i "/### Name: $1/,/##########/d" /etc/wireguard/$wg_interface.conf
 }
@@ -55,8 +57,11 @@ print_help() {
     echo "Invalid arguments. Available commands:"
     echo "<INTERFACE> must be the name of the interface you want to modify."
     echo
-    echo "> $(basename "$0") setup <INTERFACE>"
+    echo "> $(basename "$0") create <INTERFACE>"
     echo "Sets up a new wireguard interface."
+    echo
+    echo "> $(basename "$0") delete <INTERFACE>"
+    echo "Deletes this wireguard interface."
     echo
     echo "> $(basename "$0") generate-keys <INTERFACE>"
     echo "Generates new public and private key for this interface."
@@ -70,11 +75,14 @@ print_help() {
 }
 
 #
-# setup
+# print help if <INTERFACE> parameter is not defined
 #
-if [[ $1 == "setup" ]]; then
-    # print help if interface is not defined
-    [[ $wg_interface == "" ]] && print_help && exit
+[[ $wg_interface == "" ]] && print_help && exit
+
+#
+# create
+#
+if [[ $1 == "create" ]]; then   
     
     # input: wg_client_net
     echo "Enter IPv4 address range that clients will be assigned to. [def: $wg_client_net]"
@@ -85,7 +93,7 @@ if [[ $1 == "setup" ]]; then
     clear
 
     # input: wg_port
-    echo "Enter public port to connect to the wireguard service. [def: $wg_port]"
+    echo "Enter public port to connect to the wireguard service. Make sure port is free. [def: $wg_port]"
     read -p ">>> "
     if [[ $REPLY != "" ]]; then
         wg_port=$REPLY
@@ -93,18 +101,10 @@ if [[ $1 == "setup" ]]; then
     clear
 
     # summary
-    echo "WARNING: If there already exists an interface called '$wg_interface' it will be overwritten. All connected clients will have to be readded."
-    echo
-    echo "Summary:"
     echo "wg_client_net =  $wg_client_net"
     echo "wg_port =        $wg_port"
     echo
-    echo "Should the setup be started?"
     prompt_continue_or_exit
-
-    # install wireguard
-    sudo apt update
-    sudo apt install wireguard
 
     # generate public & private key
     generate_keys
@@ -112,43 +112,32 @@ if [[ $1 == "setup" ]]; then
     # generate basic interface config
     generate_interface_config
 
-    # open udp port
-    sudo nft add element inet firewall open_udp { $wg_port }
+# 
+# delete
+#
+if [[ $1 == "delete" ]]; then
+    
+    # stop interface
+    sudo wg-quick down $wg_interface
 
-    # start wireguard service
-    sudo systemctl enable wg-quick@$wg_interface.service
-    sudo systemctl start wg-quick@$wg_interface.service
-    sudo systemctl status wg-quick@$wg_interface.service
+    # delete files
+    sudo rm /etc/wireguard/$wg_interface.conf
+    sudo rm -r /etc/wireguard/keys/$wg_interface
+    
 
 #
 # generate-keys
 #
 elif [[ $1 == "generate-keys" ]]; then
-    # print help if interface is not defined
-    [[ $wg_interface == "" ]] && print_help && exit
-
-    echo "WARNING: All connected clients will have to be readded."
-    echo "Should the setup be started?"
-    prompt_continue_or_exit
-
+    
     # generate keys and interface config
     generate_keys
     generate_interface_config
-    
-    # restart service
-    sudo systemctl restart wg-quick@$wg_interface.service
-    sudo systemctl status wg-quick@$wg_interface.service
 
 #
 # add-client
 #
 elif [[ $1 == "add-client" ]]; then
-    # print help if interface is not defined
-    [[ $wg_interface == "" ]] && print_help && exit
-
-    client_name="client"
-    public_key="empty"
-    allowed_ips="10.10.10.0/24"
 
     # input: client_name
     echo "Enter name for new client. Make sure it is unique. [def: $client_name]"
@@ -159,7 +148,7 @@ elif [[ $1 == "add-client" ]]; then
     clear
 
     # input: public_key
-    echo "Enter public key of the client. [def: $public_key]"
+    echo "Enter public key of client. [def: $public_key]"
     read -p ">>> "
     if [[ $REPLY != "" ]]; then
         public_key=$REPLY
@@ -175,14 +164,10 @@ elif [[ $1 == "add-client" ]]; then
     clear
 
     # summary
-    echo "WARNING: If there already exists a client with name '$client_name' it will be removed."
-    echo
-    echo "Summary:"
     echo "client_name =  $client_name"
     echo "public_key =   $public_key"
     echo "allowed_ips =  $allowed_ips"
     echo
-    echo "Should the setup be started?"
     prompt_continue_or_exit
 
     # remove existing client
@@ -195,18 +180,10 @@ elif [[ $1 == "add-client" ]]; then
     echo "AllowedIPs = $allowed_ips"      | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo "##########"                     | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
 
-    # restart service
-    sudo systemctl restart wg-quick@$wg_interface.service
-    sudo systemctl status wg-quick@$wg_interface.service
-
 #
 # remove-client
 #
 elif [[ $1 == "remove-client" ]]; then
-    # print help if interface is not defined
-    [[ $wg_interface == "" ]] && print_help && exit
-
-    client_name="client"
 
     # input: client_name
     echo "Enter name of client that should be removed. [def: $client_name]"
@@ -218,10 +195,6 @@ elif [[ $1 == "remove-client" ]]; then
 
     # remove existing client
     remove_client $client_name
-
-    # restart service
-    sudo systemctl restart wg-quick@$wg_interface.service
-    sudo systemctl status wg-quick@$wg_interface.service
 
 #
 # help
