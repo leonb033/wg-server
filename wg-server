@@ -118,6 +118,8 @@ if [[ $1 == "create" ]]; then
 elif [[ $1 == "delete" ]]; then
     
     # stop interface
+    sudo systemctl stop wg-quick@$wg_interface.service
+    sudo systemctl disable wg-quick@$wg_interface.service
     sudo wg-quick down $wg_interface
 
     # delete files
