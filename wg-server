@@ -115,7 +115,7 @@ if [[ $1 == "create" ]]; then
 # 
 # delete
 #
-if [[ $1 == "delete" ]]; then
+elif [[ $1 == "delete" ]]; then
     
     # stop interface
     sudo wg-quick down $wg_interface
