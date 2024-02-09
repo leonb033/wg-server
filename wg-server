@@ -83,12 +83,12 @@ if [[ $1 == "setup" ]]; then
     echo "Installing wireguard..."
     sudo apt update
     sudo apt install wireguard
-    prompt_confirm "Finished. "
+    prompt_continue "Finished. "
 
     # generate public & private key
     echo "Generating public & private key..."
     generate_keys
-    prompt_confirm "Finished. "
+    prompt_continue "Finished. "
 
     # generate basic wg0 config
     generate_server_config
