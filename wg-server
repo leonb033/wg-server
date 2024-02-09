@@ -4,6 +4,7 @@ clear
 
 wg_client_net="10.11.12.0/24"
 wg_port="51820"
+wg_interface=$2
 
 prompt_continue() {
     echo
@@ -21,32 +22,32 @@ prompt_continue_or_exit() {
 }
 
 generate_server_config() {
-    echo "### DO NOT MODIFY THIS FILE MANUALLY. USE WG-SERVER COMMANDS."    | sudo tee /etc/wireguard/wg0.conf > /dev/null
-    echo "[Interface]"                                                      | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "PrivateKey = $(sudo cat /etc/wireguard/private.key)"              | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "Address = $wg_client_net"                                         | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "ListenPort = $wg_port"                                            | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo                                                                    | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
+    echo "### DO NOT MODIFY THIS FILE MANUALLY. USE WG-SERVER COMMANDS."             | sudo tee /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "[Interface]"                                                               | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "PrivateKey = $(sudo cat /etc/wireguard/keys/$wg_interface/private.key)"    | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "Address = $wg_client_net"                                                  | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "ListenPort = $wg_port"                                                     | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo                                                                             | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
 }
 
 # generate public & private key
 generate_keys() {
     # make sure all files have correct permissions
-    sudo mkdir -p /etc/wireguard
-    sudo touch /etc/wireguard/private.key
-    sudo touch /etc/wireguard/public.key
-    sudo touch /etc/wireguard/wg0.conf
+    sudo mkdir -p /etc/wireguard/wireguard/keys/$wg_interface
+    sudo touch /etc/wireguard/keys/$wg_interface/private.key
+    sudo touch /etc/wireguard/keys/$wg_interface/public.key
+    sudo touch /etc/wireguard/$wg_interface.conf
     sudo chown -R root:root /etc/wireguard
     sudo chmod -R 700 /etc/wireguard
     # generate keys
     umask 077
-    wg genkey | sudo tee /etc/wireguard/private.key > /dev/null
-    sudo cat /etc/wireguard/private.key | wg pubkey | sudo tee /etc/wireguard/public.key > /dev/null
+    wg genkey | sudo tee /etc/wireguard/keys/$wg_interface/private.key > /dev/null
+    sudo cat /etc/wireguard/keys/$wg_interface/private.key | wg pubkey | sudo tee /etc/wireguard/keys/$wg_interface/public.key > /dev/null
 }
 
 # remove client from server config
 remove_client() {
-    sudo sed -i "/### Name: $1/,/##########/d" /etc/wireguard/wg0.conf
+    sudo sed -i "/### Name: $1/,/##########/d" /etc/wireguard/$wg_interface.conf
 }
 
 #
@@ -70,7 +71,7 @@ if [[ $1 == "setup" ]]; then
     clear
 
     # summary
-    echo "WARNING: If there already exists a wg0 interface it will be overwritten. All connected clients will have to be readded."
+    echo "WARNING: If there already exists an interface called '$wg_interface' it will be overwritten. All connected clients will have to be readded."
     echo
     echo "Summary:"
     echo "wg_client_net =  $wg_client_net"
@@ -80,26 +81,22 @@ if [[ $1 == "setup" ]]; then
     prompt_continue_or_exit
 
     # install wireguard
-    echo "Installing wireguard..."
     sudo apt update
     sudo apt install wireguard
-    prompt_continue "Finished. "
 
     # generate public & private key
-    echo "Generating public & private key..."
     generate_keys
-    prompt_continue "Finished. "
 
-    # generate basic wg0 config
+    # generate basic interface config
     generate_server_config
 
     # open udp port
     sudo nft add element inet firewall open_udp { $wg_port }
 
     # start wireguard service
-    sudo systemctl enable wg-quick@wg0.service
-    sudo systemctl start wg-quick@wg0.service
-    sudo systemctl status wg-quick@wg0.service
+    sudo systemctl enable wg-quick@$wg_interface.service
+    sudo systemctl start wg-quick@$wg_interface.service
+    sudo systemctl status wg-quick@$wg_interface.service
 
 #
 # generate-keys
@@ -108,15 +105,19 @@ elif [[ $1 == "generate-keys" ]]; then
     echo "WARNING: All connected clients will have to be readded."
     echo "Should the setup be started?"
     prompt_continue_or_exit
+
+    # generate keys and interface config
     generate_keys
     generate_server_config
-    sudo systemctl restart wg-quick@wg0.service
-    sudo systemctl status wg-quick@wg0.service
+    
+    # restart service
+    sudo systemctl restart wg-quick@$wg_interface.service
+    sudo systemctl status wg-quick@$wg_interface.service
 
 #
-# client-add
+# add-client
 #
-elif [[ $1 == "client-add" ]]; then
+elif [[ $1 == "add-client" ]]; then
     client_name="client"
     public_key="empty"
     allowed_ips="10.10.10.0/24"
@@ -159,21 +160,21 @@ elif [[ $1 == "client-add" ]]; then
     # remove existing client
     remove_client $client_name
 
-    # add client to wg0 config
-    echo "### Name: $client_name" | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "[Peer]" | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "PublicKey = $public_key" | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "AllowedIPs = $allowed_ips" | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
-    echo "##########" | sudo tee -a /etc/wireguard/wg0.conf > /dev/null
+    # add client to interface config
+    echo "### Name: $client_name"         | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "[Peer]"                         | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "PublicKey = $public_key"        | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "AllowedIPs = $allowed_ips"      | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "##########"                     | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
 
     # restart service
-    sudo systemctl restart wg-quick@wg0.service
-    sudo systemctl status wg-quick@wg0.service
+    sudo systemctl restart wg-quick@$wg_interface.service
+    sudo systemctl status wg-quick@$wg_interface.service
 
 #
-# client-remove
+# remove-client
 #
-elif [[ $1 == "client-remove" ]]; then
+elif [[ $1 == "remove-client" ]]; then
     client_name="client"
 
     # input: client_name
@@ -183,11 +184,12 @@ elif [[ $1 == "client-remove" ]]; then
         client_name=$REPLY
     fi
     clear
+
     remove_client $client_name
 
     # restart service
-    sudo systemctl restart wg-quick@wg0.service
-    sudo systemctl status wg-quick@wg0.service
+    sudo systemctl restart wg-quick@$wg_interface.service
+    sudo systemctl status wg-quick@$wg_interface.service
 
 #
 # help
@@ -195,16 +197,16 @@ elif [[ $1 == "client-remove" ]]; then
 else
     echo "Invalid arguments. Available commands:"
     echo
-    echo "> $(basename "$0") setup"
+    echo "> $(basename "$0") setup <INTERFACE>"
     echo "Sets up a new wireguard interface."
     echo
-    echo "> $(basename "$0") generate-keys"
+    echo "> $(basename "$0") generate-keys <INTERFACE>"
     echo "Generates new public and private key for this server."
     echo
-    echo "> $(basename "$0") client-add"
+    echo "> $(basename "$0") add-client <INTERFACE>"
     echo "Adds a new client."
     echo
-    echo "> $(basename "$0") client-remove"
+    echo "> $(basename "$0") remove-client <INTERFACE>"
     echo "Removes a client."
     echo
 fi
