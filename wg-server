@@ -21,7 +21,7 @@ prompt_continue_or_exit() {
     clear
 }
 
-generate_server_config() {
+generate_interface_config() {
     echo "### DO NOT MODIFY THIS FILE MANUALLY. USE WG-SERVER COMMANDS."             | sudo tee /etc/wireguard/$wg_interface.conf > /dev/null
     echo "[Interface]"                                                               | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo "PrivateKey = $(sudo cat /etc/wireguard/keys/$wg_interface/private.key)"    | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
@@ -50,10 +50,32 @@ remove_client() {
     sudo sed -i "/### Name: $1/,/##########/d" /etc/wireguard/$wg_interface.conf
 }
 
+# print help message
+print_help() {
+    echo "Invalid arguments. Available commands:"
+    echo "<INTERFACE> must be the name of the interface you want to modify."
+    echo
+    echo "> $(basename "$0") setup <INTERFACE>"
+    echo "Sets up a new wireguard interface."
+    echo
+    echo "> $(basename "$0") generate-keys <INTERFACE>"
+    echo "Generates new public and private key for this interface."
+    echo
+    echo "> $(basename "$0") add-client <INTERFACE>"
+    echo "Adds a new client to this interface."
+    echo
+    echo "> $(basename "$0") remove-client <INTERFACE>"
+    echo "Removes a client from this interface."
+    echo
+}
+
 #
 # setup
 #
 if [[ $1 == "setup" ]]; then
+    # print help if interface is not defined
+    [[ $wg_interface == "" ]] && print_help && exit
+    
     # input: wg_client_net
     echo "Enter IPv4 address range that clients will be assigned to. [def: $wg_client_net]"
     read -p ">>> "
@@ -88,7 +110,7 @@ if [[ $1 == "setup" ]]; then
     generate_keys
 
     # generate basic interface config
-    generate_server_config
+    generate_interface_config
 
     # open udp port
     sudo nft add element inet firewall open_udp { $wg_port }
@@ -102,13 +124,16 @@ if [[ $1 == "setup" ]]; then
 # generate-keys
 #
 elif [[ $1 == "generate-keys" ]]; then
+    # print help if interface is not defined
+    [[ $wg_interface == "" ]] && print_help && exit
+
     echo "WARNING: All connected clients will have to be readded."
     echo "Should the setup be started?"
     prompt_continue_or_exit
 
     # generate keys and interface config
     generate_keys
-    generate_server_config
+    generate_interface_config
     
     # restart service
     sudo systemctl restart wg-quick@$wg_interface.service
@@ -118,6 +143,9 @@ elif [[ $1 == "generate-keys" ]]; then
 # add-client
 #
 elif [[ $1 == "add-client" ]]; then
+    # print help if interface is not defined
+    [[ $wg_interface == "" ]] && print_help && exit
+
     client_name="client"
     public_key="empty"
     allowed_ips="10.10.10.0/24"
@@ -175,6 +203,9 @@ elif [[ $1 == "add-client" ]]; then
 # remove-client
 #
 elif [[ $1 == "remove-client" ]]; then
+    # print help if interface is not defined
+    [[ $wg_interface == "" ]] && print_help && exit
+
     client_name="client"
 
     # input: client_name
@@ -185,6 +216,7 @@ elif [[ $1 == "remove-client" ]]; then
     fi
     clear
 
+    # remove existing client
     remove_client $client_name
 
     # restart service
@@ -195,18 +227,5 @@ elif [[ $1 == "remove-client" ]]; then
 # help
 #
 else
-    echo "Invalid arguments. Available commands:"
-    echo
-    echo "> $(basename "$0") setup <INTERFACE>"
-    echo "Sets up a new wireguard interface."
-    echo
-    echo "> $(basename "$0") generate-keys <INTERFACE>"
-    echo "Generates new public and private key for this server."
-    echo
-    echo "> $(basename "$0") add-client <INTERFACE>"
-    echo "Adds a new client."
-    echo
-    echo "> $(basename "$0") remove-client <INTERFACE>"
-    echo "Removes a client."
-    echo
+    print_help
 fi
