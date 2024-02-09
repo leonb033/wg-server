@@ -46,7 +46,7 @@ generate_keys() {
 
 # remove client from server config
 remove_client() {
-    sudo sed -i "/### $1/,/##########/d" /etc/wireguard/wg0.conf
+    sudo sed -i "/### Name: $1/,/##########/d" /etc/wireguard/wg0.conf
 }
 
 #
