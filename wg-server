@@ -183,7 +183,7 @@ elif [[ $1 == "client-remove" ]]; then
         client_name=$REPLY
     fi
     clear
-    remove_client client_name
+    remove_client $client_name
 
     # restart service
     sudo systemctl restart wg-quick@wg0.service
