@@ -33,7 +33,7 @@ generate_server_config() {
 # generate public & private key
 generate_keys() {
     # make sure all files have correct permissions
-    sudo mkdir -p /etc/wireguard/wireguard/keys/$wg_interface
+    sudo mkdir -p /etc/wireguard/keys/$wg_interface
     sudo touch /etc/wireguard/keys/$wg_interface/private.key
     sudo touch /etc/wireguard/keys/$wg_interface/public.key
     sudo touch /etc/wireguard/$wg_interface.conf
