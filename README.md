@@ -11,27 +11,27 @@ This tool automates configuration of wireguard interfaces on Debian.
 `wget -O setup.sh https://raw.githubusercontent.com/leonb033/wg-server/main/setup.sh && bash setup.sh`
 
 ## Commands
-### wg-server create <INTERFACE>
+### wg-server create \<INTERFACE\>
 Sets up a new wireguard interface.
 
-### wg-server delete <INTERFACE>
+### wg-server delete \<INTERFACE\>
 Deletes this wireguard interface.
 
-### wg-server generate-keys <INTERFACE>
+### wg-server generate-keys \<INTERFACE\>
 Generates new public and private key for this interface.
 
-### wg-server add-client <INTERFACE>
+### wg-server add-client \<INTERFACE\>
 Adds a new client to this interface.
 
-### wg-server remove-client <INTERFACE>
+### wg-server remove-client \<INTERFACE\>
 Removes a client from this interface.
 
 ## Useful wireguard commands:
 ### systemctl --type=service | grep wg-quick
 Lists all interface services.
 
-### sudo systemctl [start/stop] wg-quick@<INTERFACE>.service
+### sudo systemctl [start/stop] wg-quick@\<INTERFACE\>.service
 Start / stop this interface service.
 
-### sudo systemctl [enable/disable] wg-quick@<INTERFACE>.service
+### sudo systemctl [enable/disable] wg-quick@\<INTERFACE\>.service
 Enable / disable autostart for this interface service.
