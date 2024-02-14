@@ -1,6 +1,6 @@
 # wg-server
 
-This interactive tool automates configuration of wireguard interfaces on Debian.
+This tool automates configuration of wireguard interfaces on Debian.
 
 ## Requirements
 - Debian 12
