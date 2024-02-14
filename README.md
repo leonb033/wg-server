@@ -27,8 +27,8 @@ Adds a new peer to this interface.
 Removes a peer from this interface.
 
 ## Useful wireguard commands:
-### systemctl --type=service | grep wg-quick
-Lists all interface services.
+### sudo wg show
+List all running wireguard interfaces.
 
 ### sudo systemctl [start/stop] wg-quick@\<INTERFACE\>.service
 Start / stop this interface service.
