@@ -20,11 +20,11 @@ Deletes this wireguard interface.
 ### wg-server generate-keys \<INTERFACE\>
 Generates new public and private key for this interface.
 
-### wg-server add-client \<INTERFACE\>
-Adds a new client to this interface.
+### wg-server add-peer \<INTERFACE\>
+Adds a new peer to this interface.
 
-### wg-server remove-client \<INTERFACE\>
-Removes a client from this interface.
+### wg-server remove-peer \<INTERFACE\>
+Removes a peer from this interface.
 
 ## Useful wireguard commands:
 ### systemctl --type=service | grep wg-quick
