@@ -3,7 +3,7 @@
 clear
 
 wg_interface=$2
-wg_peer_net="10.0.0.0/24"
+wg_interface_ip="10.0.0.0/24"
 wg_port="51820"
 peer_name="peer"
 public_key="empty"
@@ -27,7 +27,7 @@ prompt_continue_or_exit() {
 generate_interface_config() {
     echo "[Interface]"                                                               | sudo tee /etc/wireguard/$wg_interface.conf > /dev/null
     echo "PrivateKey = $(sudo cat /etc/wireguard/keys/$wg_interface/private.key)"    | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
-    echo "Address = $wg_peer_net"                                                    | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
+    echo "Address = $wg_interface_ip"                                                | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo "ListenPort = $wg_port"                                                     | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
     echo                                                                             | sudo tee -a /etc/wireguard/$wg_interface.conf > /dev/null
 }
@@ -84,11 +84,11 @@ print_help() {
 #
 if [[ $1 == "create" ]]; then   
     
-    # input: wg_peer_net
-    echo "Enter IPv4 address range that peers will be assigned to. [def: $wg_peer_net]"
+    # input: wg_interface_ip
+    echo "Enter IPv4 address of this interface. [def: $wg_interface_ip]"
     read -p ">>> "
     if [[ $REPLY != "" ]]; then
-        wg_peer_net=$REPLY
+        wg_interface_ip=$REPLY
     fi
     clear
 
@@ -101,7 +101,7 @@ if [[ $1 == "create" ]]; then
     clear
 
     # summary
-    echo "wg_peer_net =  $wg_peer_net"
+    echo "wg_interface_ip =  $wg_interface_ip"
     echo "wg_port =        $wg_port"
     echo
     prompt_continue_or_exit
