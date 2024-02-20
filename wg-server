@@ -59,19 +59,19 @@ print_help() {
     echo "Invalid arguments. Available commands:"
     echo "<INTERFACE> must be the name of the interface you want to modify."
     echo
-    echo "> $(basename "$0") create <INTERFACE>"
+    echo "> $(basename "$0") <INTERFACE> create"
     echo "Sets up a new wireguard interface."
     echo
-    echo "> $(basename "$0") delete <INTERFACE>"
+    echo "> $(basename "$0") <INTERFACE> delete"
     echo "Deletes this wireguard interface."
     echo
-    echo "> $(basename "$0") generate-keys <INTERFACE>"
+    echo "> $(basename "$0") <INTERFACE> generate-keys"
     echo "Generates new public and private key for this interface."
     echo
-    echo "> $(basename "$0") add-peer <INTERFACE>"
+    echo "> $(basename "$0") <INTERFACE> add-peer"
     echo "Adds a new peer to this interface."
     echo
-    echo "> $(basename "$0") remove-peer <INTERFACE>"
+    echo "> $(basename "$0") <INTERFACE> remove-peer"
     echo "Removes a peer from this interface."
     echo
 }
