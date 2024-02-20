@@ -2,12 +2,14 @@
 
 clear
 
-wg_interface=$2
-wg_interface_ip="10.0.0.0/24"
+wg_interface=$1
+command=$2
+
+wg_interface_ip="10.0.0.1"
 wg_port="51820"
 peer_name="peer"
 public_key="empty"
-allowed_ips="0.0.0.0/0"
+allowed_ips="10.0.0.0/8"
 
 prompt_continue() {
     echo
@@ -82,7 +84,7 @@ print_help() {
 #
 # create
 #
-if [[ $1 == "create" ]]; then   
+if [[ $command == "create" ]]; then   
     
     # input: wg_interface_ip
     echo "Enter IPv4 address of this interface. [def: $wg_interface_ip]"
@@ -115,7 +117,7 @@ if [[ $1 == "create" ]]; then
 # 
 # delete
 #
-elif [[ $1 == "delete" ]]; then
+elif [[ $command == "delete" ]]; then
     
     # stop interface
     sudo systemctl stop wg-quick@$wg_interface.service
@@ -130,7 +132,7 @@ elif [[ $1 == "delete" ]]; then
 #
 # generate-keys
 #
-elif [[ $1 == "generate-keys" ]]; then
+elif [[ $command == "generate-keys" ]]; then
     
     # generate keys and interface config
     generate_keys
@@ -139,7 +141,7 @@ elif [[ $1 == "generate-keys" ]]; then
 #
 # add-peer
 #
-elif [[ $1 == "add-peer" ]]; then
+elif [[ $command == "add-peer" ]]; then
 
     # input: peer_name
     echo "Enter name for new peer. Make sure it is unique. [def: $peer_name]"
@@ -185,7 +187,7 @@ elif [[ $1 == "add-peer" ]]; then
 #
 # remove-peer
 #
-elif [[ $1 == "remove-peer" ]]; then
+elif [[ $command == "remove-peer" ]]; then
 
     # input: peer_name
     echo "Enter name of peer that should be removed. [def: $peer_name]"
